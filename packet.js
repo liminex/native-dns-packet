@@ -63,6 +63,7 @@ function nameUnpack(buff) {
   var len, comp, end, pos, part, combine = '';
 
   len = buff.readUInt8();
+  end = buff.tell();
   comp = false;
 
   while (len !== 0) {
@@ -697,16 +698,16 @@ Packet.parse = function(msg) {
         msg.seek(pos - 6);
         packet.header.rcode = (msg.readUInt8() << 4) + packet.header.rcode;
         packet.edns_version = msg.readUInt8();
-        val = msg.readUInt16BE();
+        var extra = msg.readUInt16BE();
         msg.seek(pos);
-        packet.do = (val & 0x8000) << 15;
+        packet.do = (extra & 0x8000) << 15;
         while (!rdata.buf.eof()) {
           packet.edns_options.push({
             code: rdata.buf.readUInt16BE(),
             data: rdata.buf.slice(rdata.buf.readUInt16BE()).buffer
           });
         }
-        state = PARSE_RESOURCE_RECORD;
+        state = PARSE_RESOURCE_DONE;
         break;
       case PARSE_NAPTR:
         state = parseNaptr(val, msg);
